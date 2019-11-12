@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+   
+   <context:component-scan base-package="cn.zj.ssm"/>
+   <context:property-placeholder location="classpath:db.properties"/>
+   
+   <!--配置连接电池，配置数据资源  -->
+           
+           <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+           
+           <property name="driverClassName" value="${jdbc.driverClassName}"/>
+           <property name="url" value="${jdbc.url}"/>
+           <property name="username" value="${jdbc.username}"/>
+           <property name="password" value="${jdbc.password}"/>
+           <property name="maxActive" value="${jdbc.maxActive}"/>
+           
+           </bean>
+           
+           
+           
+           
+         <!-- 配置sqlSessionFactory工厂 -->
+         
+         <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+         
+         <!-- 配件连接电池的资源 -->
+          <property name="dataSource" ref="dataSource"/>
+         
+         <!-- 配置接口映射文件 -->
+         <property name="mapperLocations">
+         
+         <array>
+              <value>classpath:cn/zj/ssm/mapper/*Mapper.xml</value>
+         </array>
+         
+         </property>
+         
+         <!--配置pojo中User的别名 -->
+         
+          <property name="typeAliasesPackage" value="cn.zj.ssm.pojo"></property>
+         
+         </bean>  
+           
+           <!-- 配置映射接口的代理对象 -->
+           
+           <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+           <!-- sqlSessionFactoryBeanName 指定创建sqlSessionFactory中Bean的名称
+                                使用value接收创建工厂对象Bean的名称也就是id
+           -->
+          <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+          <property name="basePackage" value="cn.zj.ssm.mapper"></property>
+           
+           </bean>
+           
+           
+           <!-- 创建事务管理器-->
+           
+           <!--1： 配置事务管理器 -->
+           
+           <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+           <!-- 获取连接电池资源 -->
+           <property name="dataSource" ref="dataSource"/>
+           </bean>
+           
+           <!-- 2获取事务管理器；配置通知 -->
+           <tx:advice id="txAdvice" transaction-manager="transactionManager">
+           
+           <tx:attributes>
+           <!-- 配置DQL -->
+           <tx:method name="get*" read-only="true"/>
+           <tx:method name="select*" read-only="true"/>
+           <tx:method name="query*" read-only="true"/>
+           
+           <!-- 配置DML -->
+           <tx:method name="*" read-only="false"/>
+           </tx:attributes>
+           
+           </tx:advice>
+           
+           
+           <!-- 配置切入点以及切面 -->
+           
+           <aop:config>
+           <!-- 配置切点 -->
+           <aop:pointcut expression="execution(* cn.zj.ssm.service..*.*(..))" id="pt"/>
+           
+           <!-- 配置面 -->
+           <aop:advisor advice-ref="txAdvice" pointcut-ref="pt"/>
+           
+           </aop:config>
+           
+</beans>
